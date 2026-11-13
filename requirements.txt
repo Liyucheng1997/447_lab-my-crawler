@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+httpx
+beautifulsoup4
+lxml
+# 可选：下载流媒体（m3u8）和视频网站的视频
+yt-dlp
+# 可选：抓取靠 JS 加载内容的网站（装完再执行 playwright install chromium）
+playwright

@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>我的爬虫</title>
+<link rel="stylesheet" href="/static/tokens.css">
+<link rel="stylesheet" href="/static/style.css">
+<script>
+  try { if (localStorage.getItem('theme') === 'dark') document.documentElement.dataset.theme = 'dark'; } catch (e) {}
+</script>
+</head>
+<body>
+<div id="app">
+  <header class="titlebar">
+    <div class="logo-mark">爬</div>
+    <div class="brand">
+      <div class="brand-name">我的爬虫</div>
+      <div class="brand-sub">本地运行 · 仅供学习</div>
+    </div>
+    <div class="spacer"></div>
+    <button class="btn btn-sm" id="openFolder">打开下载文件夹</button>
+    <button class="tb-round" id="themeBtn" title="切换深色 / 浅色" aria-label="切换深色或浅色"></button>
+  </header>
+
+  <main class="page">
+    <section class="hero">
+      <h1>输入网址，把页面里的<span class="hl">资源</span>找出来</h1>
+      <p class="sub">图片、视频、音频、文件、链接、正文和表格，一次扫完，勾选后下载到本机。</p>
+
+      <form class="search" id="scanForm">
+        <svg class="ico" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <input id="url" type="text" placeholder="https://example.com/page" autocomplete="off" spellcheck="false" aria-label="网址">
+        <button class="btn btn-primary" id="startBtn" type="submit">开始抓取</button>
+      </form>
+
+      <div class="opts">
+        <div class="opt-row">
+          <span class="opt-label">抓什么</span>
+          <div class="chips" id="typeChips"></div>
+        </div>
+        <div class="opt-row">
+          <span class="opt-label">范围</span>
+          <div class="seg" id="depthSeg">
+            <button type="button" data-v="0" class="active">只抓这一页</button>
+            <button type="button" data-v="1">再跟进 1 层链接</button>
+            <button type="button" data-v="2">跟进 2 层</button>
+          </div>
+        </div>
+        <details class="adv">
+          <summary>更多设置</summary>
+          <div class="adv-grid">
+            <label class="field"><span>最多抓几页</span><input class="input tabular" id="maxPages" type="number" min="1" max="300" value="20"></label>
+            <label class="field"><span>每页间隔（秒）</span><input class="input tabular" id="delay" type="number" min="0.2" max="10" step="0.1" value="0.5"></label>
+            <label class="field wide"><span>自定义选择器（可选，CSS 写法）</span><input class="input mono" id="selector" type="text" placeholder="例如 .article h2 a" spellcheck="false"></label>
+            <label class="form-check"><input type="checkbox" id="sameSite" checked> 只跟进同一个网站的链接</label>
+            <label class="form-check"><input type="checkbox" id="robots" checked> 遵守网站的 robots.txt</label>
+            <label class="form-check" id="renderWrap"><input type="checkbox" id="render"> 用浏览器渲染（内容靠 JS 加载的网站，较慢）</label>
+          </div>
+        </details>
+      </div>
+    </section>
+
+    <section class="card" id="statusCard" hidden>
+      <div class="status-line">
+        <span class="dot" id="statusDot"></span>
+        <span id="statusText" class="status-text"></span>
+        <span class="muted tabular" id="statusMeta"></span>
+        <div class="spacer"></div>
+        <button class="btn btn-sm" id="pagesToggle">查看页面</button>
+        <button class="btn btn-sm btn-danger" id="stopBtn">停止</button>
+      </div>
+      <div class="pages" id="pagesList" hidden></div>
+    </section>
+
+    <section class="card" id="resultCard" hidden>
+      <div class="result-head">
+        <div class="tabs" id="tabs"></div>
+      </div>
+      <div class="toolbar">
+        <input class="input" id="filter" type="search" placeholder="筛选：名称、网址、说明" aria-label="筛选">
+        <select class="input" id="minSize" title="按图片宽度筛选" aria-label="图片最小宽度">
+          <option value="0">图片不限大小</option>
+          <option value="200">宽度 ≥ 200</option>
+          <option value="500">宽度 ≥ 500</option>
+          <option value="1000">宽度 ≥ 1000</option>
+        </select>
+        <div class="spacer"></div>
+        <span class="muted tabular" id="selInfo"></span>
+        <button class="btn btn-sm" id="selectAll">全选</button>
+        <button class="btn btn-sm" id="exportJson">导出 JSON</button>
+        <button class="btn btn-sm" id="exportCsv">导出 CSV</button>
+        <button class="btn btn-sm btn-soft" id="dlBtn">下载所选</button>
+      </div>
+      <div id="view" class="view"></div>
+      <div class="more" id="moreWrap" hidden><button class="btn" id="moreBtn">显示更多</button></div>
+    </section>
+  </main>
+</div>
+
+<aside class="dl-panel" id="dlPanel" hidden>
+  <div class="dl-head">
+    <span class="dl-title">下载</span>
+    <span class="muted tabular" id="dlSummary"></span>
+    <div class="spacer"></div>
+    <button class="btn btn-sm" id="dlCancel">全部取消</button>
+    <button class="btn btn-sm" id="dlClear">清除已结束</button>
+    <button class="icon-btn" id="dlFold" title="收起 / 展开" aria-label="收起或展开">
+      <svg class="ico" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+    </button>
+  </div>
+  <div class="dl-list" id="dlList"></div>
+</aside>
+
+<div class="toast-host" id="toasts"></div>
+<script src="/static/app.js"></script>
+</body>
+</html>
